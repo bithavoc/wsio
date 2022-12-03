@@ -3,7 +3,6 @@ package wsio
 import (
 	"errors"
 	"io"
-	"log"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -42,7 +41,7 @@ func (s *Stream) Read(p []byte) (n int, err error) {
 	} else {
 	readNextMessage:
 		messageType, b, err = s.Conn.ReadMessage()
-		log.Printf("received message type, %v, %T", messageType, err)
+		// log.Printf("received message type, %v, %T", messageType, err)
 		var closeError *websocket.CloseError
 		if errors.As(err, &closeError) {
 			return endOfFile()
@@ -53,7 +52,7 @@ func (s *Stream) Read(p []byte) (n int, err error) {
 			return endOfFile()
 		}
 		if messageType != websocket.BinaryMessage && messageType != websocket.TextMessage {
-			log.Printf("received text message, reading more")
+			// log.Printf("received text message, reading more")
 			goto readNextMessage
 		}
 	}
