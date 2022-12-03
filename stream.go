@@ -46,6 +46,8 @@ func (s *Stream) Read(p []byte) (n int, err error) {
 		var closeError *websocket.CloseError
 		if errors.As(err, &closeError) {
 			return endOfFile()
+		} else if err != nil {
+			return -1, err
 		}
 		if messageType == websocket.CloseMessage {
 			return endOfFile()
