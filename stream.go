@@ -1,6 +1,9 @@
 package wsio
 
 import (
+	"errors"
+	"io"
+	"log"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -32,13 +35,31 @@ func (s *Stream) Read(p []byte) (n int, err error) {
 	s.readMutex.Lock()
 	defer s.readMutex.Unlock()
 	var b []byte
+	var messageType int
 	if len(s.readBuf) > 0 {
 		b = s.readBuf
 		s.readBuf = nil
 	} else {
-		_, b, err = s.Conn.ReadMessage()
+	readNextMessage:
+		messageType, b, err = s.Conn.ReadMessage()
+		log.Printf("received message type, %v, %T", messageType, err)
+		var closeError *websocket.CloseError
+		if errors.As(err, &closeError) {
+			return endOfFile()
+		}
+		if messageType == websocket.CloseMessage {
+			return endOfFile()
+		}
+		if messageType != websocket.BinaryMessage && messageType != websocket.TextMessage {
+			log.Printf("received text message, reading more")
+			goto readNextMessage
+		}
 	}
 	n = copy(p, b)
 	s.readBuf = b[n:len(b)]
 	return n, err
+}
+
+func endOfFile() (int, error) {
+	return 0, io.EOF
 }
